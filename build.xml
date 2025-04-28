@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="WebProgrammingLab3" default="env" basedir=".">
+
+    <!-- Загружаем параметры -->
+    <property file="build.properties"/>
+
+    <!-- Путь до всех зависимостей -->
+    <path id="classpath">
+        <fileset dir="${lib.dir}">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <!-- Компиляция исходников -->
+    <target name="compile">
+        <mkdir dir="${build.dir}"/>
+
+        <!-- Копируем ресурсы -->
+        <copy todir="${build.dir}">
+            <fileset dir="${src.dir}/main/resources">
+                <include name="**/*.*"/>
+            </fileset>
+        </copy>
+
+        <javac srcdir="${src.dir}/main/java" destdir="${build.dir}" classpathref="classpath"
+               includeantruntime="false" encoding="UTF-8" source="1.8" target="1.8"/>
+
+        <!-- Компиляция тестов -->
+        <javac srcdir="${test.dir}" destdir="${build.dir}" classpathref="classpath"
+               includeantruntime="false" encoding="UTF-8" source="1.8" target="1.8"/>
+    </target>
+
+    <!-- Сборка WAR файла -->
+    <target name="war" depends="compile">
+        <mkdir dir="${dist.dir}"/>
+
+        <war destfile="${dist.dir}/${war.name}" webxml="${src.dir}/main/webapp/WEB-INF/web.xml">
+            <fileset dir="${src.dir}/main/webapp"/>
+            <classes dir="${build.dir}"/>
+            <lib dir="${lib.dir}">
+                <include name="**/*.jar"/>
+            </lib>
+        </war>
+    </target>
+
+    <!-- Очистка проекта -->
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${dist.dir}"/>
+    </target>
+
+    <!-- Запуск тестов -->
+    <target name="test" depends="war">
+        <mkdir dir="reports/tests"/>
+        <junit printsummary="true" haltonfailure="true">
+            <classpath>
+                <path refid="classpath"/>
+                <pathelement path="${build.dir}"/>
+                <pathelement path="${test.dir}"/>
+            </classpath>
+            <batchtest fork="yes" todir="reports/tests">
+                <fileset dir="${test.dir}">
+                    <include name="**/*Test.java"/>
+                </fileset>
+            </batchtest>
+            <formatter type="xml"/>
+        </junit>
+    </target>
+
+    <!-- Проверка XML файлов -->
+    <target name="xml">
+        <xmlvalidate lenient="true">
+            <fileset dir="${src.dir}">
+                <include name="**/*.xml"/>
+            </fileset>
+        </xmlvalidate>
+    </target>
+
+    <!-- Воспроизведение музыки -->
+    <target name="music" depends="war">
+        <exec executable="cmd">
+            <arg line="/c start ${music.file}"/>
+        </exec>
+    </target>
+
+    <!-- Конвертация native2ascii -->
+    <target name="native2ascii">
+        <mkdir dir="${native2ascii.dest}"/>
+        <native2ascii src="${native2ascii.src}" dest="${native2ascii.dest}" encoding="UTF-8"/>
+    </target>
+
+    <!-- SCP перенос на сервер -->
+    <target name="scp" depends="war">
+        <scp file="${dist.dir}/${war.name}"
+             todir="${scp.user}@${scp.host}:${scp.path}"
+             port="${scp.port}"
+             trust="true"
+             password="yourpassword"/>
+    </target>
+
+    <!-- Альтернативная сборка -->
+    <target name="alt" depends="compile">
+        <copy todir="${build.dir}/alt">
+            <fileset dir="${src.dir}/main/java"/>
+        </copy>
+        <replaceregexp match="${alt.replace.from}" replace="${alt.replace.to}">
+            <fileset dir="${build.dir}/alt"/>
+        </replaceregexp>
+        <jar destfile="${dist.dir}/alt-project-lab3.war" basedir="${build.dir}/alt">
+            <manifest>
+                <attribute name="Implementation-Version" value="${version}"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <!-- Сборка, деплой и запуск WildFly -->
+    <target name="env" depends="war">
+        <!-- Копируем WAR в папку deployments -->
+        <copy file="${dist.dir}/${war.name}" todir="C:/Users/Artem/Desktop/Учеба/2 Курс/2 СЕМ/ОПИ/3 ЛАБА/wildfly-20.0.1.Final/standalone/deployments/"/>
+
+        <!-- Запускаем WildFly сервер -->
+        <exec executable="cmd.exe">
+            <arg line='/c "C:/Users/Artem/Desktop/Учеба/2 Курс/2 СЕМ/ОПИ/3 ЛАБА/wildfly-20.0.1.Final/bin/standalone.bat"'/>
+        </exec>
+    </target>
+
+    <!-- Проверка различий и коммит в GIT -->
+    <target name="diff">
+    <exec executable="git">
+        <arg value="add"/>
+        <arg value="."/>
+    </exec>
+
+    <exec executable="git">
+        <arg value="commit"/>
+        <arg value="-m"/>
+        <arg value="Auto commit from Ant (diff task)"/>
+        <fail if="git.failed" message="Nothing to commit."/>
+    </exec>
+    </target>
+
+    <!-- Отчет о тестировании -->
+    <target name="report" depends="test">
+        <mkdir dir="reports/final"/>
+        <copy file="reports/tests/TESTS-TestSuites.xml" todir="reports/final"/>
+        <exec executable="git">
+            <arg value="add"/>
+            <arg value="reports/final/TESTS-TestSuites.xml"/>
+        </exec>
+        <exec executable="git">
+            <arg value="commit"/>
+            <arg value="-m"/>
+            <arg value="Add junit report"/>
+        </exec>
+    </target>
+
+</project>
