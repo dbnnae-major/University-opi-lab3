@@ -144,7 +144,7 @@
     <exec executable="git">
         <arg value="push"/>
         <arg value="origin"/>
-        <arg value="master"/>
+        <arg value="main"/>
     </exec>
     </target>
 
