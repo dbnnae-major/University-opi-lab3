@@ -126,16 +126,25 @@
 
     <!-- Проверка различий и коммит в GIT -->
     <target name="diff">
+    <!-- Добавляем все файлы -->
     <exec executable="git">
         <arg value="add"/>
         <arg value="."/>
     </exec>
 
+    <!-- Делаем коммит -->
     <exec executable="git">
         <arg value="commit"/>
         <arg value="-m"/>
-        <arg value="Auto commit from Ant (diff task)"/>
-        <fail if="git.failed" message="Nothing to commit."/>
+        <arg value="Auto-commit from Ant script"/>
+        <arg value="--allow-empty"/>
+    </exec>
+
+    <!-- Отправляем на GitHub -->
+    <exec executable="git">
+        <arg value="push"/>
+        <arg value="origin"/>
+        <arg value="master"/>
     </exec>
     </target>
 
